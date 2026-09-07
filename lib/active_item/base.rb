@@ -912,15 +912,11 @@ module ActiveItem
       indexes.each do |index_name, config|
         # Check partition key if it's being changed
         partition_key = config[:partition_key]&.to_s
-        if partition_key && changed_dynamo_keys.key?(partition_key)
-          validate_gsi_key_value!(partition_key, changed_dynamo_keys[partition_key], index_name)
-        end
+        validate_gsi_key_value!(partition_key, changed_dynamo_keys[partition_key], index_name) if partition_key && changed_dynamo_keys.key?(partition_key)
 
         # Check sort key if it's being changed
         sort_key = config[:sort_key]&.to_s
-        if sort_key && changed_dynamo_keys.key?(sort_key)
-          validate_gsi_key_value!(sort_key, changed_dynamo_keys[sort_key], index_name)
-        end
+        validate_gsi_key_value!(sort_key, changed_dynamo_keys[sort_key], index_name) if sort_key && changed_dynamo_keys.key?(sort_key)
       end
     end
 
@@ -953,9 +949,8 @@ module ActiveItem
       case value
       when String
         !value.empty? # Empty strings are not allowed for GSI keys
-      when Integer, Float, BigDecimal
-        true
-      when StringIO
+      when Integer, Float, BigDecimal, StringIO
+        # Numeric (Integer, Float, BigDecimal) and Binary (StringIO) are valid GSI key types
         true
       else
         false

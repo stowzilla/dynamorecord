@@ -50,7 +50,7 @@ RSpec.describe 'GSI key type validation' do
     end
 
     it 'accepts Integer values as valid GSI key type' do
-      # Note: While Integer is a valid GSI key type in DynamoDB, the actual GSI must be
+      # NOTE: While Integer is a valid GSI key type in DynamoDB, the actual GSI must be
       # defined with Number type. The validation here only checks the Ruby type is valid.
       # The test below verifies Integer passes type validation.
       int_model = Class.new(ActiveItem::Base) do
@@ -69,7 +69,7 @@ RSpec.describe 'GSI key type validation' do
 
       # This should pass our type validation (Integer is valid)
       # but would fail at DynamoDB if the GSI was defined as String type
-      record = int_model.new(name: 'Test', priority: 12_345)
+      int_model.new(name: 'Test', priority: 12_345)
       # We only test that our validation passes - DynamoDB will reject if GSI type mismatches
       expect(int_model.new.send(:valid_gsi_key_type?, 12_345)).to be true
     end

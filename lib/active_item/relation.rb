@@ -331,9 +331,7 @@ module ActiveItem
         if conditions.any? && !conditions[:_empty]
           foreign_key, expected_value = conditions.first
           actual_value = record.send(foreign_key)
-          unless actual_value == expected_value
-            raise ActiveItem::RecordNotFound, "Couldn't find #{resolved_model.name} with id=#{id}"
-          end
+          raise ActiveItem::RecordNotFound, "Couldn't find #{resolved_model.name} with id=#{id}" unless actual_value == expected_value
         end
 
         preload_associations_for_records([record]) if includes_associations.any?
