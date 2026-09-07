@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.0.22
+
+### Changed
+
+- **Scoped `find` on associations** — `Relation#find(id)` now enforces association scope, matching Rails behavior. When called on an association (e.g., `@project.epics.find(id)`), it validates that the found record belongs to the association before returning it. If the record exists but belongs to a different parent, `ActiveItem::RecordNotFound` is raised. This prevents accidentally accessing records outside the association scope.
+
+  ```ruby
+  # Before: would return the epic even if it belonged to a different project
+  @project.epics.find(epic_id)
+
+  # After: raises RecordNotFound if epic.project_id != @project.id
+  @project.epics.find(epic_id)
+  ```
+
 ## 0.0.21
 
 ### Added
