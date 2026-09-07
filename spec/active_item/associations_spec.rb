@@ -240,6 +240,53 @@ RSpec.describe ActiveItem::Associations do
         expect(child.label).to eq('created-bang-child')
       end
     end
+
+    describe '#find (scoped to association)' do
+      it 'returns the record when it belongs to the association' do
+        parent = parent_class.new(name: 'Test')
+        parent.save
+
+        child = child_class.new(parent_id: parent.id, label: 'mine')
+        child.save
+
+        found = parent.children.find(child.id)
+        expect(found.id).to eq(child.id)
+        expect(found.label).to eq('mine')
+        expect(found.parent_id).to eq(parent.id)
+      end
+
+      it 'raises RecordNotFound when record exists but belongs to different parent' do
+        parent1 = parent_class.new(name: 'Parent 1')
+        parent1.save
+        parent2 = parent_class.new(name: 'Parent 2')
+        parent2.save
+
+        child = child_class.new(parent_id: parent2.id, label: 'belongs-to-p2')
+        child.save
+
+        expect { parent1.children.find(child.id) }.to raise_error(ActiveItem::RecordNotFound)
+      end
+
+      it 'raises RecordNotFound when record does not exist' do
+        parent = parent_class.new(name: 'Test')
+        parent.save
+
+        expect { parent.children.find('nonexistent-id') }.to raise_error(ActiveItem::RecordNotFound)
+      end
+
+      it 'still supports block form (Enumerable#find)' do
+        parent = parent_class.new(name: 'Test')
+        parent.save
+
+        child1 = child_class.new(parent_id: parent.id, label: 'first')
+        child1.save
+        child2 = child_class.new(parent_id: parent.id, label: 'target')
+        child2.save
+
+        found = parent.children.find { |c| c.label == 'target' }
+        expect(found.id).to eq(child2.id)
+      end
+    end
   end
 
   describe 'validates_associated' do

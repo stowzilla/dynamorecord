@@ -294,18 +294,26 @@ module ActiveItem
 
     # Find by id within the current scope, or find by block (like Enumerable#find)
     #
+    # When called on an association (e.g., @project.epics.find(id)), validates that
+    # the found record belongs to the association's scope. This matches Rails behavior
+    # where association.find(id) only returns records belonging to that association.
+    #
     # @overload find(id)
     #   Find a record by ID within the current scope
     #   @param id [String] The ID to find
-    #   @return [Object, nil] The found record or nil
+    #   @return [Object] The found record
+    #   @raise [ActiveItem::RecordNotFound] If record not found or not in scope
     #
     # @overload find(&block)
     #   Find the first record matching the block condition (like Enumerable#find/detect)
     #   @yield [record] Evaluates the block for each record
     #   @return [Object, nil] The first record where block returns true, or nil
     #
-    # @example Find by ID
-    #   User.where(status: 'active').find('user-123')
+    # @example Find by ID (scoped to association)
+    #   @project.epics.find('epic-123')  # Only finds if epic belongs to @project
+    #
+    # @example Find by ID (unscoped)
+    #   Epic.where(status: 'active').find('epic-123')  # Finds any active epic
     #
     # @example Find by block
     #   User.where(status: 'active').find { |u| u.email.include?('@example.com') }
@@ -317,13 +325,20 @@ module ActiveItem
       elsif id
         # Use direct GetItem instead of scanning — O(1) vs O(n)
         record = resolved_model.find(id)
+
+        # When called on an association (has conditions), validate scope
+        # This ensures @project.epics.find(id) only returns epics belonging to @project
+        if conditions.any? && !conditions[:_empty]
+          foreign_key, expected_value = conditions.first
+          actual_value = record.send(foreign_key)
+          raise ActiveItem::RecordNotFound, "Couldn't find #{resolved_model.name} with id=#{id}" unless actual_value == expected_value
+        end
+
         preload_associations_for_records([record]) if includes_associations.any?
         record
       else
         raise ArgumentError, 'find requires either an ID or a block'
       end
-    rescue ActiveItem::RecordNotFound
-      nil
     end
 
     # Find by conditions within current scope
